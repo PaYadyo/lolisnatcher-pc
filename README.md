@@ -160,6 +160,13 @@ This application is a third-party open-source client for Danbooru and compatible
 
 ---
 
+## 👥 Contributors
+
+- **[PaYadyo](https://github.com/PaYadyo)** — Original author & project creator
+- **[Antigravity](https://github.com/google-deepmind)** (Google DeepMind) — Desktop app architecture, Danbooru API downloader, animations & UI development
+
+---
+
 ## 📄 License
 
 Distributed under the [MIT License](LICENSE). See `LICENSE` for more information.
