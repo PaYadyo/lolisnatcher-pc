@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './', // CRITICAL for Electron: relative asset paths for file:// protocol
   plugins: [
     react(),
     tailwindcss(),

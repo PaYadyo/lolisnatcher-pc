@@ -19,6 +19,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: false, // Allows cross-origin image preview and fetches
+      allowRunningInsecureContent: true,
     },
     title: 'LoliSnatcher PC - Danbooru Viewer',
     icon: path.join(__dirname, '../public/icon.png'),
@@ -27,6 +28,18 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+  });
+
+  // Enable F12 and Ctrl+Shift+I to toggle DevTools for inspection
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
+
+  // Log load errors
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error(`Load failed for ${validatedURL}: ${errorDescription} (${errorCode})`);
   });
 
   // Bypasses Danbooru / booru hotlinking and CORS restrictions
@@ -46,13 +59,27 @@ function createWindow() {
     callback({ requestHeaders: details.requestHeaders });
   });
 
-  // Load dev server or production build
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-  if (isDev) {
-    const devUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
-    mainWindow.loadURL(devUrl);
+  // Smart URL loader: prefers built dist/index.html unless explicitly running VITE_DEV_SERVER_URL
+  const indexPath = path.join(__dirname, '../dist/index.html');
+  const devUrl = process.env.VITE_DEV_SERVER_URL;
+
+  if (devUrl) {
+    mainWindow.loadURL(devUrl).catch(() => {
+      console.warn('Dev server not reachable, falling back to dist/index.html');
+      if (fs.existsSync(indexPath)) {
+        mainWindow.loadFile(indexPath);
+      }
+    });
+  } else if (fs.existsSync(indexPath)) {
+    mainWindow.loadFile(indexPath);
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // Fallback attempt to dev server
+    mainWindow.loadURL('http://localhost:5173').catch((err) => {
+      dialog.showErrorBox(
+        'LoliSnatcher PC - Error Loading',
+        `Could not load the application. Make sure the app is built (dist/index.html exists) or the dev server is running on http://localhost:5173.\n\nError: ${err.message}`
+      );
+    });
   }
 
   mainWindow.on('maximize', () => mainWindow.webContents.send('window:isMaximized', true));
